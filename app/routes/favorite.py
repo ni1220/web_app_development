@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, jsonify, abort
+from flask import Blueprint, render_template, redirect, url_for, jsonify, abort, flash
 from flask_login import login_required, current_user
 from app.models.favorite import Favorite
 from app.models.recipe import Recipe
@@ -9,23 +9,39 @@ bp = Blueprint('favorite', __name__, url_prefix='/favorites')
 @bp.route('/')
 @login_required
 def list_favorites():
+    """個人收藏清單頁面。
+
+    顯示目前登入使用者所有已收藏的食譜（依收藏時間遞減排序）。
     """
-    GET:  顯示目前登入使用者的所有收藏食譜。
-          呼叫 Favorite.get_by_user(current_user.id)。
-          渲染 favorite/list.html。
-          未登入 → Flask-Login 自動重導向 /auth/login。
-    """
-    pass
+    favorites = Favorite.get_by_user(current_user.id)
+    # 從收藏記錄中取出食譜物件，方便模板直接使用
+    recipes = [fav.recipe for fav in favorites if fav.recipe is not None]
+    return render_template('favorite/list.html', recipes=recipes)
 
 
 @bp.route('/<int:recipe_id>', methods=['POST'])
 @login_required
 def toggle(recipe_id):
+    """切換指定食譜的收藏狀態（收藏 ↔ 取消收藏）。
+
+    回傳 JSON，供前端 JavaScript 動態更新按鈕狀態。
+
+    Response JSON:
+        {"status": "favorited"}   — 已收藏
+        {"status": "unfavorited"} — 已取消收藏
+        {"error": "..."}          — 操作失敗
     """
-    POST: 切換指定 recipe_id 的收藏狀態（toggle）。
-          確認食譜存在，否則 abort(404)。
-          查詢 Favorite.query_favorite(current_user.id, recipe_id)。
-          若已收藏 → Favorite.delete_favorite() 取消收藏 → 回傳 {"status": "unfavorited"}。
-          若未收藏 → Favorite.create()  新增收藏  → 回傳 {"status": "favorited"}。
-    """
-    pass
+    recipe = Recipe.get_by_id(recipe_id)
+    if recipe is None:
+        abort(404)
+
+    try:
+        existing = Favorite.query_favorite(current_user.id, recipe_id)
+        if existing:
+            Favorite.delete_favorite(current_user.id, recipe_id)
+            return jsonify({'status': 'unfavorited'})
+        else:
+            Favorite.create(current_user.id, recipe_id)
+            return jsonify({'status': 'favorited'})
+    except Exception as e:
+        return jsonify({'error': '操作失敗，請稍後再試。'}), 500

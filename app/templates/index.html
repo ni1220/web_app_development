@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}首頁{% endblock %}
+{% block meta_description %}探索各式料理食譜，收藏您喜愛的食譜，隨時查閱食材與步驟{% endblock %}
+
+{% block content %}
+
+<!-- Hero 區塊 -->
+<div class="p-5 mb-4 bg-dark text-white rounded-3 shadow">
+  <div class="container-fluid py-3">
+    <h1 class="display-5 fw-bold"><i class="bi bi-book-half me-2"></i>食譜收藏夾</h1>
+    <p class="col-md-8 fs-5 text-white-50">
+      收藏喜愛的料理食譜，隨時查閱食材清單與烹飪步驟，讓每一次下廚都更輕鬆！
+    </p>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-warning btn-lg" href="{{ url_for('recipe.list_recipes') }}">
+        <i class="bi bi-grid me-1"></i> 瀏覽所有食譜
+      </a>
+      {% if not current_user.is_authenticated %}
+        <a class="btn btn-outline-light btn-lg" href="{{ url_for('auth.register') }}">
+          <i class="bi bi-person-plus me-1"></i> 免費註冊
+        </a>
+      {% else %}
+        <a class="btn btn-outline-light btn-lg" href="{{ url_for('recipe.create') }}">
+          <i class="bi bi-plus-circle me-1"></i> 新增食譜
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- 搜尋區塊 -->
+<div class="card shadow-sm mb-5">
+  <div class="card-body p-4">
+    <h5 class="card-title mb-3"><i class="bi bi-search me-2"></i>搜尋食譜</h5>
+    <form method="GET" action="{{ url_for('search.search') }}" class="row g-2">
+      <div class="col-md-5">
+        <input type="text" class="form-control" name="q" placeholder="輸入食譜名稱或描述關鍵字...">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" name="category">
+          <option value="">所有分類</option>
+          <option value="中式">中式</option>
+          <option value="西式">西式</option>
+          <option value="日式">日式</option>
+          <option value="韓式">韓式</option>
+          <option value="甜點">甜點</option>
+          <option value="素食">素食</option>
+          <option value="湯品">湯品</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" name="difficulty">
+          <option value="">所有難度</option>
+          <option value="簡單">簡單</option>
+          <option value="中等">中等</option>
+          <option value="困難">困難</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-dark w-100">
+          <i class="bi bi-search me-1"></i> 搜尋
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 最新食譜 -->
+<section>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>最新食譜</h2>
+    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-sm btn-outline-dark">
+      查看全部 <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+
+  {% if recipes %}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+      {% for recipe in recipes %}
+        <div class="col">
+          <div class="card h-100 shadow-sm recipe-card">
+            <!-- 封面圖片 -->
+            {% if recipe.cover_image %}
+              <img src="{{ url_for('static', filename=recipe.cover_image) }}"
+                   class="card-img-top" alt="{{ recipe.title }}" style="height:180px; object-fit:cover;">
+            {% else %}
+              <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height:180px;">
+                <i class="bi bi-image text-white fs-1"></i>
+              </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">{{ recipe.title }}</h5>
+              <p class="card-text text-muted small flex-grow-1">
+                {{ recipe.description[:60] ~ '...' if recipe.description and recipe.description|length > 60 else recipe.description or '暫無描述' }}
+              </p>
+              <div class="d-flex gap-1 flex-wrap mb-2">
+                {% if recipe.category %}
+                  <span class="badge bg-warning text-dark">{{ recipe.category }}</span>
+                {% endif %}
+                {% if recipe.difficulty %}
+                  <span class="badge bg-{% if recipe.difficulty == '簡單' %}success{% elif recipe.difficulty == '中等' %}warning text-dark{% else %}danger{% endif %}">
+                    {{ recipe.difficulty }}
+                  </span>
+                {% endif %}
+                {% if recipe.cook_time %}
+                  <span class="badge bg-light text-dark border">
+                    <i class="bi bi-clock me-1"></i>{{ recipe.cook_time }} 分鐘
+                  </span>
+                {% endif %}
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                  <i class="bi bi-person me-1"></i>{{ recipe.author.nickname if recipe.author else '未知' }}
+                </small>
+                <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="btn btn-sm btn-dark">
+                  查看食譜
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+      目前還沒有食譜，<a href="{{ url_for('recipe.create') }}">來新增第一道吧！</a>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}

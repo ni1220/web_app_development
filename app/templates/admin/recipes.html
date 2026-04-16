@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}管理食譜{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 fw-bold mb-0"><i class="bi bi-journal-text me-2 text-warning"></i>管理食譜</h1>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>返回後台
+  </a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>共 <strong>{{ recipes|length }}</strong> 道食譜</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>食譜名稱</th>
+          <th>作者</th>
+          <th>分類</th>
+          <th>難度</th>
+          <th>建立日期</th>
+          <th class="text-center">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for recipe in recipes %}
+        <tr>
+          <td class="text-muted small">{{ recipe.id }}</td>
+          <td>
+            <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="fw-semibold text-decoration-none">
+              {{ recipe.title }}
+            </a>
+          </td>
+          <td>{{ recipe.author.nickname if recipe.author else '—' }}</td>
+          <td>
+            {% if recipe.category %}
+              <span class="badge bg-warning text-dark">{{ recipe.category }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if recipe.difficulty %}
+              <span class="badge bg-{% if recipe.difficulty == '簡單' %}success{% elif recipe.difficulty == '中等' %}warning text-dark{% else %}danger{% endif %}">
+                {{ recipe.difficulty }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-muted small">{{ recipe.created_at.strftime('%Y-%m-%d') if recipe.created_at else '—' }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('recipe.edit', recipe_id=recipe.id) }}" class="btn btn-sm btn-outline-dark me-1">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="{{ url_for('admin.delete_recipe', recipe_id=recipe.id) }}"
+                  class="d-inline" onsubmit="return confirm('確定刪除「{{ recipe.title }}」？此操作無法復原。')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">尚無食譜</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

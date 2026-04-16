@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}新增食譜{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dynamic-row { background: #f8f9fa; border-radius: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h1 class="h3 fw-bold mb-4"><i class="bi bi-plus-circle me-2 text-warning"></i>新增食譜</h1>
+
+    <form method="POST" action="{{ url_for('recipe.create') }}" enctype="multipart/form-data" novalidate>
+
+      <!-- 基本資訊 -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-info-circle me-2"></i>基本資訊</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="title" class="form-label fw-semibold">食譜名稱 <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="title" name="title"
+                   placeholder="例如：蒜泥白肉" value="{{ request.form.get('title', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label fw-semibold">簡介描述</label>
+            <textarea class="form-control" id="description" name="description" rows="3"
+                      placeholder="簡短說明這道料理的特色或口感...">{{ request.form.get('description', '') }}</textarea>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="category" class="form-label fw-semibold">分類標籤</label>
+              <select class="form-select" id="category" name="category">
+                <option value="">請選擇</option>
+                {% for cat in ['中式','西式','日式','韓式','甜點','素食','湯品'] %}
+                  <option value="{{ cat }}" {{ 'selected' if request.form.get('category') == cat }}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="difficulty" class="form-label fw-semibold">難度</label>
+              <select class="form-select" id="difficulty" name="difficulty">
+                <option value="">請選擇</option>
+                {% for diff in ['簡單','中等','困難'] %}
+                  <option value="{{ diff }}" {{ 'selected' if request.form.get('difficulty') == diff }}>{{ diff }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="cook_time" class="form-label fw-semibold">烹飪時間（分鐘）</label>
+              <input type="number" class="form-control" id="cook_time" name="cook_time"
+                     min="1" placeholder="例如：30" value="{{ request.form.get('cook_time', '') }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 封面圖片 -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-image me-2"></i>封面圖片（可選）</div>
+        <div class="card-body">
+          <input type="file" class="form-control" id="cover_image" name="cover_image"
+                 accept="image/png,image/jpeg,image/gif,image/webp">
+          <div class="form-text">支援 JPG、PNG、GIF、WebP，檔案大小不超過 5MB。</div>
+        </div>
+      </div>
+
+      <!-- 食材清單 -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-basket me-2"></i>食材清單</div>
+        <div class="card-body">
+          <div id="ingredients-container">
+            <div class="row g-2 mb-2 dynamic-row p-2 align-items-center ingredient-item">
+              <div class="col-md-5">
+                <input type="text" class="form-control form-control-sm" name="ingredient_name_0" placeholder="食材名稱，例如：豬五花">
+              </div>
+              <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm" name="ingredient_quantity_0" placeholder="份量，例如：300">
+              </div>
+              <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm" name="ingredient_unit_0" placeholder="單位，例如：克">
+              </div>
+              <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-row" title="刪除此列">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-ingredient">
+            <i class="bi bi-plus me-1"></i>新增食材
+          </button>
+        </div>
+      </div>
+
+      <!-- 烹飪步驟 -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold"><i class="bi bi-list-ol me-2"></i>烹飪步驟</div>
+        <div class="card-body">
+          <div id="steps-container">
+            <div class="d-flex gap-2 mb-2 align-items-start step-item dynamic-row p-2">
+              <span class="badge bg-dark mt-1 step-badge">1</span>
+              <textarea class="form-control form-control-sm" name="step_description_0" rows="2"
+                        placeholder="第一步的說明..."></textarea>
+              <button type="button" class="btn btn-sm btn-outline-danger remove-row" title="刪除此步驟">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="add-step">
+            <i class="bi bi-plus me-1"></i>新增步驟
+          </button>
+        </div>
+      </div>
+
+      <!-- 送出按鈕 -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-dark px-4">
+          <i class="bi bi-check-lg me-1"></i> 儲存食譜
+        </button>
+        <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-secondary">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ─── 動態新增食材列 ───────────────────────────────────────
+  let ingredientIndex = 1;
+  document.getElementById('add-ingredient').addEventListener('click', () => {
+    const container = document.getElementById('ingredients-container');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 dynamic-row p-2 align-items-center ingredient-item';
+    row.innerHTML = `
+      <div class="col-md-5"><input type="text" class="form-control form-control-sm" name="ingredient_name_${ingredientIndex}" placeholder="食材名稱"></div>
+      <div class="col-md-3"><input type="text" class="form-control form-control-sm" name="ingredient_quantity_${ingredientIndex}" placeholder="份量"></div>
+      <div class="col-md-3"><input type="text" class="form-control form-control-sm" name="ingredient_unit_${ingredientIndex}" placeholder="單位"></div>
+      <div class="col-md-1 text-center"><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="bi bi-x"></i></button></div>`;
+    container.appendChild(row);
+    ingredientIndex++;
+  });
+
+  // ─── 動態新增步驟列 ───────────────────────────────────────
+  let stepIndex = 1;
+  document.getElementById('add-step').addEventListener('click', () => {
+    const container = document.getElementById('steps-container');
+    const row = document.createElement('div');
+    row.className = 'd-flex gap-2 mb-2 align-items-start step-item dynamic-row p-2';
+    row.innerHTML = `
+      <span class="badge bg-dark mt-1 step-badge">${stepIndex + 1}</span>
+      <textarea class="form-control form-control-sm" name="step_description_${stepIndex}" rows="2" placeholder="第 ${stepIndex + 1} 步的說明..."></textarea>
+      <button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="bi bi-x"></i></button>`;
+    container.appendChild(row);
+    stepIndex++;
+  });
+
+  // ─── 刪除列（事件委派） ───────────────────────────────────
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.remove-row')) {
+      e.target.closest('.ingredient-item, .step-item').remove();
+    }
+  });
+</script>
+{% endblock %}

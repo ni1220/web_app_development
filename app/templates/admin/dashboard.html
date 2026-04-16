@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}管理後台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-danger"></i>管理員後台</h1>
+  <span class="badge bg-danger">管理員模式</span>
+</div>
+
+<!-- 統計卡片 -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center p-4 bg-dark text-white">
+      <i class="bi bi-journal-text fs-1 mb-2 text-warning"></i>
+      <div class="display-6 fw-bold">{{ total_recipes }}</div>
+      <p class="mb-0 text-white-50">食譜總數</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center p-4 bg-dark text-white">
+      <i class="bi bi-people fs-1 mb-2 text-warning"></i>
+      <div class="display-6 fw-bold">{{ total_users }}</div>
+      <p class="mb-0 text-white-50">使用者總數</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center p-4 bg-dark text-white">
+      <i class="bi bi-graph-up fs-1 mb-2 text-warning"></i>
+      <div class="display-6 fw-bold">—</div>
+      <p class="mb-0 text-white-50">系統狀態正常</p>
+    </div>
+  </div>
+</div>
+
+<!-- 快捷連結 -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <a href="{{ url_for('admin.manage_recipes') }}" class="card card-body shadow-sm text-decoration-none text-dark d-flex flex-row align-items-center gap-3">
+      <i class="bi bi-journal-text fs-2 text-warning"></i>
+      <div>
+        <div class="fw-bold">管理食譜</div>
+        <small class="text-muted">編輯或刪除所有食譜</small>
+      </div>
+      <i class="bi bi-arrow-right ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-6">
+    <a href="{{ url_for('admin.manage_users') }}" class="card card-body shadow-sm text-decoration-none text-dark d-flex flex-row align-items-center gap-3">
+      <i class="bi bi-people fs-2 text-warning"></i>
+      <div>
+        <div class="fw-bold">管理使用者</div>
+        <small class="text-muted">檢視或停用帳號</small>
+      </div>
+      <i class="bi bi-arrow-right ms-auto text-muted"></i>
+    </a>
+  </div>
+</div>
+
+<!-- 最新食譜 -->
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold"><i class="bi bi-clock-history me-2"></i>最新新增的食譜</div>
+  <div class="list-group list-group-flush">
+    {% for recipe in latest_recipes %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="fw-semibold text-decoration-none">
+            {{ recipe.title }}
+          </a>
+          <small class="text-muted ms-2">by {{ recipe.author.nickname if recipe.author else '未知' }}</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <small class="text-muted">{{ recipe.created_at.strftime('%Y-%m-%d') if recipe.created_at else '' }}</small>
+          <form method="POST" action="{{ url_for('admin.delete_recipe', recipe_id=recipe.id) }}"
+                onsubmit="return confirm('確定刪除「{{ recipe.title }}」？')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="list-group-item text-muted text-center py-3">尚無食譜</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

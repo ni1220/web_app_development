@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.title }}{% endblock %}
+{% block meta_description %}{{ recipe.description or recipe.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .ingredient-row { background: #f8f9fa; border-radius: 6px; }
+  .step-number { width:36px; height:36px; background:#212529; color:#fff; border-radius:50%;
+                 display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <!-- 左欄：食譜主體 -->
+  <div class="col-lg-8">
+
+    <!-- 麵包屑 -->
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">首頁</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('recipe.list_recipes') }}">所有食譜</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ recipe.title }}</li>
+      </ol>
+    </nav>
+
+    <!-- 封面圖片 -->
+    {% if recipe.cover_image %}
+      <img src="{{ url_for('static', filename=recipe.cover_image) }}"
+           class="img-fluid rounded-3 mb-4 shadow-sm w-100"
+           alt="{{ recipe.title }}" style="max-height:380px; object-fit:cover;">
+    {% endif %}
+
+    <!-- 標題與 META -->
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+      <h1 class="h2 fw-bold mb-0">{{ recipe.title }}</h1>
+      <!-- 收藏按鈕（已登入才顯示） -->
+      {% if current_user.is_authenticated %}
+        <button id="favorite-btn" class="btn btn-{% if is_favorited %}danger{% else %}outline-danger{% endif %}"
+                data-recipe-id="{{ recipe.id }}" data-favorited="{{ 'true' if is_favorited else 'false' }}">
+          <i class="bi bi-heart{% if is_favorited %}-fill{% endif %} me-1"></i>
+          <span id="favorite-text">{{ '已收藏' if is_favorited else '加入收藏' }}</span>
+        </button>
+      {% endif %}
+    </div>
+
+    <!-- 標籤列 -->
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      {% if recipe.category %}
+        <span class="badge bg-warning text-dark fs-6 px-3 py-2">{{ recipe.category }}</span>
+      {% endif %}
+      {% if recipe.difficulty %}
+        <span class="badge bg-{% if recipe.difficulty == '簡單' %}success{% elif recipe.difficulty == '中等' %}warning text-dark{% else %}danger{% endif %} fs-6 px-3 py-2">
+          <i class="bi bi-bar-chart me-1"></i>{{ recipe.difficulty }}
+        </span>
+      {% endif %}
+      {% if recipe.cook_time %}
+        <span class="badge bg-light text-dark border fs-6 px-3 py-2">
+          <i class="bi bi-clock me-1"></i>{{ recipe.cook_time }} 分鐘
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- 作者與日期 -->
+    <p class="text-muted small mb-3">
+      <i class="bi bi-person-circle me-1"></i>
+      <strong>{{ recipe.author.nickname if recipe.author else '未知' }}</strong>
+      &nbsp;&bull;&nbsp;
+      <i class="bi bi-calendar3 me-1"></i>
+      {{ recipe.created_at.strftime('%Y-%m-%d') if recipe.created_at else '' }}
+    </p>
+
+    <!-- 描述 -->
+    {% if recipe.description %}
+      <p class="lead mb-4">{{ recipe.description }}</p>
+    {% endif %}
+
+    <hr>
+
+    <!-- 食材清單 -->
+    <section class="mb-5">
+      <h2 class="h4 fw-bold mb-3">
+        <i class="bi bi-basket me-2 text-warning"></i>食材清單
+        <small class="text-muted fs-6 fw-normal">（共 {{ recipe.ingredients|length }} 項）</small>
+      </h2>
+      {% if recipe.ingredients %}
+        <div class="row row-cols-1 row-cols-md-2 g-2">
+          {% for ing in recipe.ingredients %}
+            <div class="col">
+              <div class="ingredient-row p-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">{{ ing.name }}</span>
+                <span class="text-muted">{{ ing.quantity }}{{ ing.unit or '' }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">此食譜尚未新增食材。</p>
+      {% endif %}
+    </section>
+
+    <!-- 烹飪步驟 -->
+    <section class="mb-4">
+      <h2 class="h4 fw-bold mb-3">
+        <i class="bi bi-list-ol me-2 text-warning"></i>烹飪步驟
+        <small class="text-muted fs-6 fw-normal">（共 {{ recipe.steps|length }} 步）</small>
+      </h2>
+      {% if recipe.steps %}
+        <div class="d-flex flex-column gap-3">
+          {% for step in recipe.steps %}
+            <div class="d-flex gap-3 align-items-start">
+              <div class="step-number">{{ step.step_order }}</div>
+              <div class="flex-grow-1 pt-1">{{ step.description }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">此食譜尚未新增步驟。</p>
+      {% endif %}
+    </section>
+
+  </div>
+
+  <!-- 右欄：操作面板 -->
+  <div class="col-lg-4">
+    <div class="card shadow-sm sticky-top" style="top: 80px;">
+      <div class="card-body">
+        <h5 class="card-title fw-bold mb-3">操作</h5>
+
+        <!-- 編輯 / 刪除（作者或管理員才顯示） -->
+        {% if current_user.is_authenticated and (current_user.id == recipe.author_id or current_user.is_admin) %}
+          <a href="{{ url_for('recipe.edit', recipe_id=recipe.id) }}" class="btn btn-outline-dark w-100 mb-2">
+            <i class="bi bi-pencil me-1"></i> 編輯食譜
+          </a>
+          <form method="POST" action="{{ url_for('recipe.delete', recipe_id=recipe.id) }}"
+                onsubmit="return confirm('確定要刪除「{{ recipe.title }}」嗎？此操作無法復原。')">
+            <button type="submit" class="btn btn-outline-danger w-100">
+              <i class="bi bi-trash me-1"></i> 刪除食譜
+            </button>
+          </form>
+          <hr>
+        {% endif %}
+
+        <!-- 食譜資訊摘要 -->
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">作者</span>
+            <strong>{{ recipe.author.nickname if recipe.author else '未知' }}</strong>
+          </li>
+          {% if recipe.category %}
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">分類</span>
+            <strong>{{ recipe.category }}</strong>
+          </li>
+          {% endif %}
+          {% if recipe.difficulty %}
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">難度</span>
+            <strong>{{ recipe.difficulty }}</strong>
+          </li>
+          {% endif %}
+          {% if recipe.cook_time %}
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">烹飪時間</span>
+            <strong>{{ recipe.cook_time }} 分鐘</strong>
+          </li>
+          {% endif %}
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">食材數</span>
+            <strong>{{ recipe.ingredients|length }} 項</strong>
+          </li>
+          <li class="list-group-item px-0 d-flex justify-content-between">
+            <span class="text-muted">步驟數</span>
+            <strong>{{ recipe.steps|length }} 步</strong>
+          </li>
+        </ul>
+
+        <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-outline-secondary w-100 mt-3">
+          <i class="bi bi-arrow-left me-1"></i> 返回列表
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // 收藏 / 取消收藏按鈕 AJAX
+  const favoriteBtn = document.getElementById('favorite-btn');
+  if (favoriteBtn) {
+    favoriteBtn.addEventListener('click', async () => {
+      const recipeId = favoriteBtn.dataset.recipeId;
+      try {
+        const res = await fetch(`/favorites/${recipeId}`, { method: 'POST' });
+        const data = await res.json();
+        const isFav = data.status === 'favorited';
+        favoriteBtn.className = `btn btn-${isFav ? 'danger' : 'outline-danger'}`;
+        favoriteBtn.querySelector('i').className = `bi bi-heart${isFav ? '-fill' : ''} me-1`;
+        document.getElementById('favorite-text').textContent = isFav ? '已收藏' : '加入收藏';
+      } catch (e) {
+        alert('操作失敗，請稍後再試。');
+      }
+    });
+  }
+</script>
+{% endblock %}

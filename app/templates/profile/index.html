@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}個人資料{% endblock %}
+
+{% block content %}
+<div class="row">
+  <!-- 左欄：個人資訊 -->
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm text-center p-4">
+      <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+           style="width:80px; height:80px; font-size:2rem;">
+        {{ current_user.nickname[0]|upper }}
+      </div>
+      <h2 class="h5 fw-bold mb-1">{{ current_user.nickname }}</h2>
+      <p class="text-muted small mb-2">@{{ current_user.username }}</p>
+      {% if current_user.is_admin %}
+        <span class="badge bg-danger">管理員</span>
+      {% endif %}
+      <hr>
+      <div class="d-flex justify-content-around text-center">
+        <div>
+          <div class="fw-bold fs-5">{{ my_recipes|length }}</div>
+          <small class="text-muted">我的食譜</small>
+        </div>
+        <div>
+          <div class="fw-bold fs-5">{{ current_user.favorites|length }}</div>
+          <small class="text-muted">已收藏</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右欄：設定表單 -->
+  <div class="col-md-8">
+
+    <!-- 更新暱稱 -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold"><i class="bi bi-pencil me-2"></i>更新暱稱</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('profile.index') }}">
+          <input type="hidden" name="action" value="update_nickname">
+          <div class="mb-3">
+            <label for="nickname" class="form-label">新暱稱</label>
+            <input type="text" class="form-control" id="nickname" name="nickname"
+                   value="{{ current_user.nickname }}" maxlength="50" required>
+          </div>
+          <button type="submit" class="btn btn-dark">
+            <i class="bi bi-check-lg me-1"></i> 儲存暱稱
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 更新密碼 -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold"><i class="bi bi-lock me-2"></i>更新密碼</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('profile.index') }}">
+          <input type="hidden" name="action" value="update_password">
+          <div class="mb-3">
+            <label for="current_password" class="form-label">目前密碼</label>
+            <input type="password" class="form-control" id="current_password" name="current_password" required>
+          </div>
+          <div class="mb-3">
+            <label for="new_password" class="form-label">新密碼</label>
+            <input type="password" class="form-control" id="new_password" name="new_password"
+                   minlength="6" required>
+          </div>
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label">確認新密碼</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                   minlength="6" required>
+          </div>
+          <button type="submit" class="btn btn-dark">
+            <i class="bi bi-shield-lock me-1"></i> 更新密碼
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 我的食譜 -->
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-journal-text me-2"></i>我的食譜
+        <span class="badge bg-secondary ms-2">{{ my_recipes|length }}</span>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for recipe in my_recipes %}
+          <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}"
+             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-semibold">{{ recipe.title }}</span>
+              {% if recipe.category %}
+                <span class="badge bg-warning text-dark ms-2">{{ recipe.category }}</span>
+              {% endif %}
+            </div>
+            <small class="text-muted">{{ recipe.created_at.strftime('%Y-%m-%d') if recipe.created_at else '' }}</small>
+          </a>
+        {% else %}
+          <div class="list-group-item text-muted text-center py-3">
+            <i class="bi bi-journal-x me-1"></i>尚未建立任何食譜
+          </div>
+        {% endfor %}
+      </div>
+      {% if current_user.is_authenticated %}
+        <div class="card-footer">
+          <a href="{{ url_for('recipe.create') }}" class="btn btn-sm btn-dark">
+            <i class="bi bi-plus me-1"></i>新增食譜
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

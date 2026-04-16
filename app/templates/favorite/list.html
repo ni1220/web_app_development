@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}我的收藏{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 fw-bold mb-0">
+    <i class="bi bi-heart-fill me-2 text-danger"></i>我的收藏
+    <small class="text-muted fs-6 fw-normal ms-2">（{{ recipes|length }} 道）</small>
+  </h1>
+  <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-sm btn-outline-dark">
+    <i class="bi bi-grid me-1"></i>探索更多食譜
+  </a>
+</div>
+
+{% if recipes %}
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+    {% for recipe in recipes %}
+      <div class="col">
+        <div class="card h-100 shadow-sm recipe-card">
+          {% if recipe.cover_image %}
+            <img src="{{ url_for('static', filename=recipe.cover_image) }}"
+                 class="card-img-top" alt="{{ recipe.title }}" style="height:170px; object-fit:cover;">
+          {% else %}
+            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height:170px;">
+              <i class="bi bi-image text-white fs-1"></i>
+            </div>
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title fs-6">{{ recipe.title }}</h5>
+            <p class="card-text text-muted small flex-grow-1">
+              {{ recipe.description[:55] ~ '...' if recipe.description and recipe.description|length > 55 else recipe.description or '暫無描述' }}
+            </p>
+            <div class="d-flex gap-1 flex-wrap mb-2">
+              {% if recipe.category %}
+                <span class="badge bg-warning text-dark">{{ recipe.category }}</span>
+              {% endif %}
+              {% if recipe.difficulty %}
+                <span class="badge bg-{% if recipe.difficulty == '簡單' %}success{% elif recipe.difficulty == '中等' %}warning text-dark{% else %}danger{% endif %}">
+                  {{ recipe.difficulty }}
+                </span>
+              {% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                <i class="bi bi-person me-1"></i>{{ recipe.author.nickname if recipe.author else '未知' }}
+              </small>
+              <a href="{{ url_for('recipe.detail', recipe_id=recipe.id) }}" class="btn btn-sm btn-dark">查看</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-heart fs-1 d-block mb-3 text-danger opacity-50"></i>
+    <p class="mb-3">您還沒有收藏任何食譜。</p>
+    <a href="{{ url_for('recipe.list_recipes') }}" class="btn btn-dark">
+      <i class="bi bi-grid me-1"></i> 去探索食譜
+    </a>
+  </div>
+{% endif %}
+{% endblock %}
